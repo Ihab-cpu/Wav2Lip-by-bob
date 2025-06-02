@@ -158,31 +158,25 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Using {} for inference.'.format(device))
 
 def _load(checkpoint_path):
-    if device == 'cuda':
-        checkpoint = torch.load(checkpoint_path, weights_only=False)
-    else:
-        checkpoint = torch.load(checkpoint_path,
-                                map_location=lambda storage, loc: storage,
-                                weights_only=False)
-    return checkpoint
-	
+	if device == 'cuda':
+		checkpoint = torch.load(checkpoint_path)
+	else:
+		checkpoint = torch.load(checkpoint_path,
+								map_location=lambda storage, loc: storage)
+	return checkpoint
+
 def load_model(path):
-    print("Load checkpoint from: {}".format(path))
-    checkpoint = _load(path)
-    # If loading a standard checkpoint (dict with "state_dict")
-    if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
-        model = Wav2Lip()
-        s = checkpoint["state_dict"]
-        new_s = {}
-        for k, v in s.items():
-            new_s[k.replace('module.', '')] = v
-        model.load_state_dict(new_s)
-        model = model.to(device)
-        return model.eval()
-    else:
-        # If loading a TorchScript model (SD-GAN/SD-NoGAN)
-        model = torch.jit.load(path, map_location=device)
-        return model.eval()
+	model = Wav2Lip()
+	print("Load checkpoint from: {}".format(path))
+	checkpoint = _load(path)
+	s = checkpoint["state_dict"]
+	new_s = {}
+	for k, v in s.items():
+		new_s[k.replace('module.', '')] = v
+	model.load_state_dict(new_s)
+
+	model = model.to(device)
+	return model.eval()
 
 def main():
 	if not os.path.isfile(args.face):
